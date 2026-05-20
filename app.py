@@ -15,26 +15,39 @@ st.title("🏥 공지사항 자동 분배 시스템")
 if 'df' not in st.session_state:
     st.session_state['df'] = None
 
+# 2. 버튼 클릭 시 데이터 로드
 if st.button("🔄 실시간 데이터 불러오기"):
-    with st.spinner("데이터를 가져오는 중..."):
+    with st.spinner("구글 시트에서 데이터를 가져오는 중..."):
         st.session_state['df'] = load_data(GOOGLE_SHEET_URL)
         st.rerun()
 
+# 3. 데이터가 있을 때 로직 실행
 if st.session_state['df'] is not None:
     df = st.session_state['df']
     
-    # [핵심 수정] '공지병원'이라는 단어가 포함된 열 이름을 찾습니다.
-    target_col = next((col for col in df.columns if '공지병원' in str(col)), None)
+    # 4. 키워드가 포함된 열 이름 찾기
+    col_date = next((c for c in df.columns if '배포일자' in str(c)), None)
+    col_notice = next((c for c in df.columns if '반영시 공지문' in str(c)), None)
+    col_hospital = next((c for c in df.columns if '공지병원' in str(c)), None)
     
-    if target_col:
-        # 해당 열을 사용하여 필터링 로직 수행
-        target_hospitals = df[target_col].dropna().unique()
-        selected_hospital = st.selectbox("병원 선택", target_hospitals)
+    if all([col_date, col_notice, col_hospital]):
+        # 병원 선택 드롭박스
+        hospitals = df[col_hospital].dropna().unique()
+        selected_hospital = st.selectbox("📌 확인할 병원을 고르세요:", hospitals)
         
-        filtered_df = df[df[target_col] == selected_hospital]
-        st.dataframe(filtered_df)
+        # 선택한 병원의 데이터 필터링
+        filtered_df = df[df[col_hospital] == selected_hospital]
+        
+        # 5. 결과 출력 (배포일자와 공지내용 위주로 표시)
+        st.subheader(f"✨ {selected_hospital} 공지사항 상세")
+        
+        for idx, row in filtered_df.iterrows():
+            st.markdown(f"**📅 배포일자:** {row[col_date]}")
+            st.info(f"{row[col_notice]}") # 공지 내용을 눈에 띄게 표시
+            st.divider() # 구분선
+            
     else:
-        st.error("오류: '공지병원'이라는 단어가 포함된 열을 찾을 수 없습니다.")
-        st.write("현재 시트의 열 제목들:", df.columns.tolist())
+        st.error("오류: 필요한 열(배포일자, 반영시 공지문, 공지병원)을 찾을 수 없습니다.")
+        st.write("인식된 열 목록:", df.columns.tolist())
 else:
     st.info("데이터가 없습니다. '실시간 데이터 불러오기' 버튼을 눌러주세요.")
