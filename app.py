@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from streamlit_extras.copy_to_clipboard import copy_to_clipboard
 
 # 1. 웹 페이지 기본 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
@@ -19,7 +18,9 @@ fixed_hospitals = [
 def load_data(url):
     base_url = url.split('/edit')[0]
     download_url = f"{base_url}/export?format=xlsx"
+    # 날짜 시간 자동 변환 방지 (A열을 문자열로)
     df = pd.read_excel(download_url, sheet_name="배포내역 확인", dtype={0: str})
+    # 앞의 10글자만 남김
     df.iloc[:, 0] = df.iloc[:, 0].str[:10]
     return df
 
@@ -73,13 +74,7 @@ try:
         
         st.subheader(f"📌 {selected_option} 내용")
         
-        # 버튼을 오른쪽 끝으로 정렬
-        col_left, col_right = st.columns([0.93, 0.07])
-        with col_right:
-            # 엑스트라 라이브러리 사용
-            copy_to_clipboard(group_mapping[selected_option])
-            st.toast("복사 완료!")
-
+        # 복사 버튼 없이 일단 텍스트 영역만 표시 (라이브러리 문제 해결 전)
         st.text_area(label="아래 내용을 복사해서 사용하세요.", value=group_mapping[selected_option], height=500)
     else:
         st.info("💡 등록된 공지사항이 없습니다.")
