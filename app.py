@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 
 # 1. 웹 페이지 기본 세팅
-st.set_page_config(page_title="공지사항 자동 분배기", layout="wide")
-st.title("🏥 구글 시트 연동 공지사항 자동 정렬 및 필터 시스템")
+st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
+st.title("🏥 EDGE&NEXT 공지사항 ")
 
 # 고정 구글 시트 URL
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/16Ygs3k4Dqolt6HaYNmdrNop1ptuV9_jZ2TEYaj8xzNA/edit#gid=0"
@@ -25,11 +25,12 @@ def load_data(url):
 try:
     df = load_data(GOOGLE_SHEET_URL)
     
-    # [수정 1] 날짜 전처리: 시간을 제거하고 'YYYY-MM-DD' 형식만 남김
-    df.iloc[:, 0] = pd.to_datetime(df.iloc[:, 0], errors='coerce').dt.strftime('%Y-%m-%d')
+    # [날짜 해결] 데이터 자체를 문자열로 변환 후 첫 10글자(YYYY-MM-DD)만 강제 추출
+    df.iloc[:, 0] = df.iloc[:, 0].astype(str).str[:10]
     
+    # 날짜 목록 추출 (날짜 형식인 것만 필터링)
     available_dates = df.iloc[:, 0].dropna()
-    available_dates = available_dates[~available_dates.isin(["nan", "", "NaT", "None"])]
+    available_dates = available_dates[available_dates.str.match(r'\d{4}-\d{2}-\d{2}')]
     date_list = sorted(list(set(available_dates)), reverse=True)
     
     if not date_list:
@@ -76,12 +77,12 @@ try:
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         
-        # [수정 2] Copy 버튼 크기 최적화
+        # [Copy 버튼 최적화] 컬럼 비율 조정 및 버튼 크기 고정
         col1, col2 = st.columns([0.9, 0.1])
         with col1:
             st.subheader(f"📌 {selected_option} 내용")
         with col2:
-            # use_container_width=False로 설정하여 버튼이 내용물 크기에 맞게 표시됨
+            # 버튼 크기를 내용물에 맞게 표시
             if st.button("📋 Copy", use_container_width=False):
                 st.copy_to_clipboard(group_mapping[selected_option])
                 st.toast("내용이 복사되었습니다!")
