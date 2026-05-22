@@ -5,8 +5,10 @@ import pandas as pd
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 st.title("🏥 EDGE&NEXT 공지사항 ")
 
+# 고정 구글 시트 URL
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/16Ygs3k4Dqolt6HaYNmdrNop1ptuV9_jZ2TEYaj8xzNA/edit#gid=0"
 
+# 고정 병원 목록
 fixed_hospitals = [
     "전체병원", "서울부민", "부산부민", "온종합", "해운대부민", "혜민", 
     "대림성모", "제천서울", "여수중앙", "구포부민", "두발로", "세계로", 
@@ -18,20 +20,20 @@ fixed_hospitals = [
 def load_data(url):
     base_url = url.split('/edit')[0]
     download_url = f"{base_url}/export?format=xlsx"
-    return pd.read_excel(download_url, sheet_name="배포내역 확인")
+    
+    # [수정사항 1] dtype={0: str}을 추가하여 첫 번째 열(A열)을 처음부터 문자열로 읽음
+    df = pd.read_excel(download_url, sheet_name="배포내역 확인", dtype={0: str})
+    
+    # [수정사항 2] 문자열로 변환 후 10글자만 잘라내어 시간 정보 원천 차단
+    df.iloc[:, 0] = df.iloc[:, 0].str[:10]
+    return df
 
 try:
     df = load_data(GOOGLE_SHEET_URL)
     
-    # [수정된 부분] 
-    # datetime64 오류를 방지하기 위해 먼저 .astype(str)로 문자열 변환 후 슬라이싱합니다.
-    # 이렇게 하면 00:00:00이 포함되지 않은 YYYY-MM-DD만 남게 됩니다.
-    df.iloc[:, 0] = df.iloc[:, 0].astype(str).str[:10]
-    
-    # 날짜 목록 추출
+    # 날짜 목록 추출 및 정렬
     available_dates = df.iloc[:, 0].dropna()
-    # 날짜 형식이 아닌 경우(nan 등) 제외
-    available_dates = available_dates[available_dates != 'nan']
+    available_dates = available_dates[available_dates.str.match(r'\d{4}-\d{2}-\d{2}')]
     date_list = sorted(list(set(available_dates)), reverse=True)
     
     if not date_list:
@@ -78,12 +80,12 @@ try:
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         
-        # 버튼 배치를 텍스트와 분리하여 가로로 배치
+        # 버튼 배치
         col1, col2 = st.columns([0.9, 0.1])
         with col1:
             st.subheader(f"📌 {selected_option} 내용")
         with col2:
-            if st.button("📋 Copy"):
+            if st.button("📋 Copy", use_container_width=False):
                 st.copy_to_clipboard(group_mapping[selected_option])
                 st.toast("내용이 복사되었습니다!")
 
