@@ -5,10 +5,8 @@ import pandas as pd
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 st.title("🏥 EDGE&NEXT 공지사항 ")
 
-# 고정 구글 시트 URL
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/16Ygs3k4Dqolt6HaYNmdrNop1ptuV9_jZ2TEYaj8xzNA/edit#gid=0"
 
-# 고정 병원 목록
 fixed_hospitals = [
     "전체병원", "서울부민", "부산부민", "온종합", "해운대부민", "혜민", 
     "대림성모", "제천서울", "여수중앙", "구포부민", "두발로", "세계로", 
@@ -25,16 +23,19 @@ def load_data(url):
 try:
     df = load_data(GOOGLE_SHEET_URL)
     
-    # [날짜 해결] 데이터 자체를 문자열로 변환 후 첫 10글자(YYYY-MM-DD)만 강제 추출
+    # [수정된 부분] 
+    # datetime64 오류를 방지하기 위해 먼저 .astype(str)로 문자열 변환 후 슬라이싱합니다.
+    # 이렇게 하면 00:00:00이 포함되지 않은 YYYY-MM-DD만 남게 됩니다.
     df.iloc[:, 0] = df.iloc[:, 0].astype(str).str[:10]
     
-    # 날짜 목록 추출 (날짜 형식인 것만 필터링)
+    # 날짜 목록 추출
     available_dates = df.iloc[:, 0].dropna()
-    available_dates = available_dates[available_dates.str.match(r'\d{4}-\d{2}-\d{2}')]
+    # 날짜 형식이 아닌 경우(nan 등) 제외
+    available_dates = available_dates[available_dates != 'nan']
     date_list = sorted(list(set(available_dates)), reverse=True)
     
     if not date_list:
-        st.error("❌ '배포내역 확인' 시트의 A열에서 올바른 날짜 데이터를 찾을 수 없습니다.")
+        st.error("❌ '배포내역 확인' 시트의 A열에서 데이터를 찾을 수 없습니다.")
         st.stop()
         
     selected_date = st.selectbox("📅 조회할 배포일자를 선택하세요:", date_list)
@@ -77,13 +78,12 @@ try:
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         
-        # [Copy 버튼 최적화] 컬럼 비율 조정 및 버튼 크기 고정
+        # 버튼 배치를 텍스트와 분리하여 가로로 배치
         col1, col2 = st.columns([0.9, 0.1])
         with col1:
             st.subheader(f"📌 {selected_option} 내용")
         with col2:
-            # 버튼 크기를 내용물에 맞게 표시
-            if st.button("📋 Copy", use_container_width=False):
+            if st.button("📋 Copy"):
                 st.copy_to_clipboard(group_mapping[selected_option])
                 st.toast("내용이 복사되었습니다!")
 
