@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from streamlit_extras.copy_to_clipboard import copy_to_clipboard
 
 # 1. 웹 페이지 기본 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
@@ -66,7 +65,7 @@ try:
         content_groups.setdefault(t, []).append(h)
         
     if content_groups:
-        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러와 그룹화했습니다!")
+        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러왔습니다!")
         
         dropdown_options = []
         group_mapping = {}
@@ -79,12 +78,7 @@ try:
         
         st.subheader(f"📌 {selected_option} 내용")
         
-        # 버튼을 오른쪽 끝으로 정렬
-        col_left, col_right = st.columns([0.93, 0.07])
-        with col_right:
-            copy_to_clipboard(group_mapping[selected_option])
-            st.toast("복사 완료!")
-
+        # [수정] 내장 함수만 사용한 텍스트 영역
         st.text_area(label="아래 내용을 복사해서 사용하세요.", value=group_mapping[selected_option], height=500)
     else:
         st.info("💡 등록된 공지사항이 없습니다.")
