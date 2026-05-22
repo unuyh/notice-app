@@ -1,14 +1,13 @@
 import streamlit as st
 import pandas as pd
+from streamlit_extras.copy_to_clipboard import copy_to_clipboard
 
 # 1. 웹 페이지 기본 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 st.title("🏥 EDGE&NEXT 공지사항 ")
 
-# 고정 구글 시트 URL
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/16Ygs3k4Dqolt6HaYNmdrNop1ptuV9_jZ2TEYaj8xzNA/edit#gid=0"
 
-# 고정 병원 목록
 fixed_hospitals = [
     "전체병원", "서울부민", "부산부민", "온종합", "해운대부민", "혜민", 
     "대림성모", "제천서울", "여수중앙", "구포부민", "두발로", "세계로", 
@@ -20,24 +19,18 @@ fixed_hospitals = [
 def load_data(url):
     base_url = url.split('/edit')[0]
     download_url = f"{base_url}/export?format=xlsx"
-    
-    # 첫 번째 열을 문자열(str)로 읽어와 시간 데이터가 생성되는 것을 방지
     df = pd.read_excel(download_url, sheet_name="배포내역 확인", dtype={0: str})
-    
-    # 앞의 10글자(YYYY-MM-DD)만 추출하여 시간 정보 원천 차단
     df.iloc[:, 0] = df.iloc[:, 0].str[:10]
     return df
 
 try:
     df = load_data(GOOGLE_SHEET_URL)
     
-    # 날짜 목록 추출 및 정렬
     available_dates = df.iloc[:, 0].dropna()
     available_dates = available_dates[available_dates.str.match(r'\d{4}-\d{2}-\d{2}')]
     date_list = sorted(list(set(available_dates)), reverse=True)
     
     if not date_list:
-        st.error("❌ '배포내역 확인' 시트의 A열에서 데이터를 찾을 수 없습니다.")
         st.stop()
         
     selected_date = st.selectbox("📅 조회할 배포일자를 선택하세요:", date_list)
@@ -49,10 +42,8 @@ try:
     for idx, notice in source_data.items():
         notice_str = str(notice).strip()
         if not notice_str or notice_str == "nan": continue
-            
         hospital_cell = filtered_df.loc[idx, filtered_df.columns[23]]
         if pd.isna(hospital_cell): continue
-            
         hospitals = [h.strip() for h in str(hospital_cell).split(",")]
         for h in hospitals:
             if h in notice_dict: notice_dict[h].append(notice_str)
@@ -69,7 +60,7 @@ try:
         content_groups.setdefault(t, []).append(h)
         
     if content_groups:
-        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러와 그룹화했습니다!")
+        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러왔습니다!")
         
         dropdown_options = []
         group_mapping = {}
@@ -80,14 +71,14 @@ try:
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         
-        # UI 배치: 서브헤더 아래에 버튼을 오른쪽 끝으로 정렬
         st.subheader(f"📌 {selected_option} 내용")
         
+        # 버튼을 오른쪽 끝으로 정렬
         col_left, col_right = st.columns([0.93, 0.07])
         with col_right:
-            if st.button("📋 Copy", use_container_width=True):
-                st.copy_to_clipboard(group_mapping[selected_option])
-                st.toast("내용이 복사되었습니다!")
+            # 엑스트라 라이브러리 사용
+            copy_to_clipboard(group_mapping[selected_option])
+            st.toast("복사 완료!")
 
         st.text_area(label="아래 내용을 복사해서 사용하세요.", value=group_mapping[selected_option], height=500)
     else:
