@@ -21,10 +21,10 @@ def load_data(url):
     base_url = url.split('/edit')[0]
     download_url = f"{base_url}/export?format=xlsx"
     
-    # [수정사항 1] dtype={0: str}을 추가하여 첫 번째 열(A열)을 처음부터 문자열로 읽음
+    # 첫 번째 열을 문자열(str)로 읽어와 시간 데이터가 생성되는 것을 방지
     df = pd.read_excel(download_url, sheet_name="배포내역 확인", dtype={0: str})
     
-    # [수정사항 2] 문자열로 변환 후 10글자만 잘라내어 시간 정보 원천 차단
+    # 앞의 10글자(YYYY-MM-DD)만 추출하여 시간 정보 원천 차단
     df.iloc[:, 0] = df.iloc[:, 0].str[:10]
     return df
 
@@ -80,12 +80,12 @@ try:
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         
-        # 버튼 배치
-        col1, col2 = st.columns([0.9, 0.1])
-        with col1:
-            st.subheader(f"📌 {selected_option} 내용")
-        with col2:
-            if st.button("📋 Copy", use_container_width=False):
+        # UI 배치: 서브헤더 아래에 버튼을 오른쪽 끝으로 정렬
+        st.subheader(f"📌 {selected_option} 내용")
+        
+        col_left, col_right = st.columns([0.93, 0.07])
+        with col_right:
+            if st.button("📋 Copy", use_container_width=True):
                 st.copy_to_clipboard(group_mapping[selected_option])
                 st.toast("내용이 복사되었습니다!")
 
