@@ -6,7 +6,7 @@ st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
 st.markdown("""
     <style>
-    /* 메인 콘텐츠 영역을 중앙으로 정렬하고 가로 폭을 1000px로 제한 */
+    /* 메인 콘텐츠 영역을 중앙으로 정렬하고 가로 폭을 1400px로 제한 */
     .block-container {
         max-width: 1400px;
         padding-left: 2rem;
@@ -39,16 +39,18 @@ def load_data(url):
 try:
     df = load_data(GOOGLE_SHEET_URL)
     
-    # 전처리: A열(배포일자) 날짜 형식 처리
-    df.iloc[:, 0] = df.iloc[:, 0].astype(str).str.split(" ").str[0].str.strip()
+    # 전처리: A열(배포일자)에서 날짜 부분만 확실하게 추출 (시간 정보 제거)
+    # pd.to_datetime으로 변환 후 다시 문자열(YYYY-MM-DD)로 변환
+    df.iloc[:, 0] = pd.to_datetime(df.iloc[:, 0], errors='coerce').dt.strftime('%Y-%m-%d')
     
     # 3. 배포일자(A열) 목록 추출
     available_dates = df.iloc[:, 0].dropna()
-    available_dates = available_dates[~available_dates.isin(["nan", "", "NaT"])]
+    # "NaT"(날짜 변환 실패) 및 빈 값 제거
+    available_dates = available_dates[available_dates != "NaT"]
     date_list = sorted(list(set(available_dates)), reverse=True)
     
     if not date_list:
-        st.error("❌ '배포내역 확인' 시트의 A열에서 데이터를 찾을 수 없습니다.")
+        st.error("❌ '배포내역 확인' 시트의 A열에서 올바른 날짜 데이터를 찾을 수 없습니다.")
         st.stop()
         
     selected_date = st.selectbox("📅 조회할 배포일자를 선택하세요:", date_list)
