@@ -1,9 +1,22 @@
 import streamlit as st
 import pandas as pd
 
-# 1. 웹 페이지 기본 세팅
+# 1. 페이지 설정 (wide로 설정 후 CSS로 여백 추가)
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
-st.title("🏥 EDGE&NEXT 공지사항 ")
+
+st.markdown("""
+    <style>
+    .main-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# 2. 메인 컨테이너 시작
+st.markdown('<div class="main-container">', unsafe_allow_html=True)
+
+st.title("🏥 EDGE&NEXT 공지사항")
 
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/16Ygs3k4Dqolt6HaYNmdrNop1ptuV9_jZ2TEYaj8xzNA/edit#gid=0"
 
@@ -18,26 +31,17 @@ fixed_hospitals = [
 def load_data(url):
     base_url = url.split('/edit')[0]
     download_url = f"{base_url}/export?format=xlsx"
-    # 날짜 시간 자동 변환 방지 (A열을 문자열로)
     df = pd.read_excel(download_url, sheet_name="배포내역 확인", dtype={0: str})
-    # 앞의 10글자(YYYY-MM-DD)만 남김
     df.iloc[:, 0] = df.iloc[:, 0].str[:10]
     return df
 
 try:
     df = load_data(GOOGLE_SHEET_URL)
-    
-    # 날짜 목록 추출 및 정렬
     available_dates = df.iloc[:, 0].dropna()
     available_dates = available_dates[available_dates.str.match(r'\d{4}-\d{2}-\d{2}')]
     date_list = sorted(list(set(available_dates)), reverse=True)
     
-    if not date_list:
-        st.error("❌ '배포내역 확인' 시트에서 날짜 데이터를 찾을 수 없습니다.")
-        st.stop()
-        
     selected_date = st.selectbox("📅 조회할 배포일자를 선택하세요:", date_list)
-    
     filtered_df = df[df.iloc[:, 0] == selected_date]
     source_data = filtered_df.iloc[:, 22].dropna()
     notice_dict = {hospital: [] for hospital in fixed_hospitals}
@@ -45,10 +49,8 @@ try:
     for idx, notice in source_data.items():
         notice_str = str(notice).strip()
         if not notice_str or notice_str == "nan": continue
-            
         hospital_cell = filtered_df.loc[idx, filtered_df.columns[23]]
         if pd.isna(hospital_cell): continue
-            
         hospitals = [h.strip() for h in str(hospital_cell).split(",")]
         for h in hospitals:
             if h in notice_dict: notice_dict[h].append(notice_str)
@@ -65,8 +67,6 @@ try:
         content_groups.setdefault(t, []).append(h)
         
     if content_groups:
-        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러왔습니다!")
-        
         dropdown_options = []
         group_mapping = {}
         for i, (text, hospitals) in enumerate(content_groups.items(), 1):
@@ -75,13 +75,16 @@ try:
             group_mapping[name] = text
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
+        copy_text = group_mapping[selected_option]
         
         st.subheader(f"📌 {selected_option} 내용")
-        
-        # [수정] 내장 함수만 사용한 텍스트 영역
-        st.text_area(label="아래 내용을 복사해서 사용하세요.", value=group_mapping[selected_option], height=500)
+        st.info("💡 아래 박스를 클릭 후 Ctrl+A(전체선택) -> Ctrl+C(복사) 하세요.")
+        st.text_area("복사할 내용", value=copy_text, height=300)
+            
     else:
         st.info("💡 등록된 공지사항이 없습니다.")
 
 except Exception as e:
     st.error(f"오류 발생: {e}")
+
+st.markdown('</div>', unsafe_allow_html=True) # 메인 컨테이너 종료
