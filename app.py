@@ -6,7 +6,6 @@ st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
 st.markdown("""
     <style>
-    /* 메인 콘텐츠 영역을 중앙으로 정렬하고 가로 폭을 1400px로 제한 */
     .block-container {
         max-width: 1400px;
         padding-left: 2rem;
@@ -18,7 +17,7 @@ st.markdown("""
 
 st.title("🏥 EDGE&NEXT 공지사항")
 
-# 고정 구글 시트 URL
+# 구글 시트 URL
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/16Ygs3k4Dqolt6HaYNmdrNop1ptuV9_jZ2TEYaj8xzNA/edit#gid=0"
 
 # 고정 병원 목록
@@ -34,23 +33,23 @@ fixed_hospitals = [
 def load_data(url):
     base_url = url.split('/edit')[0]
     download_url = f"{base_url}/export?format=xlsx"
+    # 날짜 데이터 손실 방지를 위해 일단 불러온 뒤 처리
     return pd.read_excel(download_url, sheet_name="배포내역 확인")
 
 try:
     df = load_data(GOOGLE_SHEET_URL)
     
-    # 전처리: A열(배포일자)에서 날짜 부분만 확실하게 추출 (시간 정보 제거)
-    # pd.to_datetime으로 변환 후 다시 문자열(YYYY-MM-DD)로 변환
+    # [수정 핵심] 날짜 데이터를 강제로 YYYY-MM-DD 문자열로 변환하여 시분초 제거
+    # errors='coerce'를 써서 날짜가 아닌 값은 NaT로 처리 후, .dt.strftime으로 날짜 포맷만 추출
     df.iloc[:, 0] = pd.to_datetime(df.iloc[:, 0], errors='coerce').dt.strftime('%Y-%m-%d')
     
-    # 3. 배포일자(A열) 목록 추출
+    # 3. 배포일자(A열) 목록 추출 (날짜만 깔끔하게 남음)
     available_dates = df.iloc[:, 0].dropna()
-    # "NaT"(날짜 변환 실패) 및 빈 값 제거
     available_dates = available_dates[available_dates != "NaT"]
     date_list = sorted(list(set(available_dates)), reverse=True)
     
     if not date_list:
-        st.error("❌ '배포내역 확인' 시트의 A열에서 올바른 날짜 데이터를 찾을 수 없습니다.")
+        st.error("❌ '배포내역 확인' 시트의 A열에서 데이터를 찾을 수 없습니다.")
         st.stop()
         
     selected_date = st.selectbox("📅 조회할 배포일자를 선택하세요:", date_list)
