@@ -8,7 +8,7 @@ st.markdown("""
     <style>
     /* 메인 콘텐츠 영역을 중앙으로 정렬하고 가로 폭을 1000px로 제한 */
     .block-container {
-        max-width: 1000px;
+        max-width: 1400px;
         padding-left: 2rem;
         padding-right: 2rem;
         margin: 0 auto;
