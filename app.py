@@ -1,11 +1,24 @@
 import streamlit as st
 import pandas as pd
 
-# 1. 웹 페이지 기본 세팅
-st.set_page_config(page_title="공지사항 자동 분배기", layout="wide")
-st.title("🏥 구글 시트 연동 공지사항 자동 정렬 및 필터 시스템")
+# 1. 페이지 설정 및 여백을 위한 CSS 추가
+st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
-# 고정 구글 시트 URL (이미 수정함)
+st.markdown("""
+    <style>
+    /* 메인 콘텐츠 영역을 중앙으로 정렬하고 가로 폭을 1000px로 제한 */
+    .block-container {
+        max-width: 1000px;
+        padding-left: 2rem;
+        padding-right: 2rem;
+        margin: 0 auto;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+st.title("🏥 EDGE&NEXT 공지사항")
+
+# 고정 구글 시트 URL
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/16Ygs3k4Dqolt6HaYNmdrNop1ptuV9_jZ2TEYaj8xzNA/edit#gid=0"
 
 # 고정 병원 목록
@@ -16,16 +29,14 @@ fixed_hospitals = [
     "서일메디컬", "울산연세", "쉬즈메디", "마곡부민", "성남중앙", "부천예손", "더케이부산", "김해메가", "미소래"
 ]
 
-# 2. 데이터 불러오기 함수 (안정성 강화)
+# 2. 데이터 불러오기 함수
 @st.cache_data(ttl=600)
 def load_data(url):
-    # /edit 이하를 제거하고 /export?format=xlsx로 변환하여 다운로드
     base_url = url.split('/edit')[0]
     download_url = f"{base_url}/export?format=xlsx"
     return pd.read_excel(download_url, sheet_name="배포내역 확인")
 
 try:
-    # 데이터 불러오기
     df = load_data(GOOGLE_SHEET_URL)
     
     # 전처리: A열(배포일자) 날짜 형식 처리
@@ -44,8 +55,6 @@ try:
     
     # 4. 선택 날짜 필터링 및 공지사항 분류
     filtered_df = df[df.iloc[:, 0] == selected_date]
-    
-    # W열(공지내용), X열(대상병원) 사용
     source_data = filtered_df.iloc[:, 22].dropna()
     notice_dict = {hospital: [] for hospital in fixed_hospitals}
     
@@ -74,7 +83,7 @@ try:
         
     # 6. 결과 출력
     if content_groups:
-        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러와 그룹화했습니다!")
+        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러왔습니다!")
         
         dropdown_options = []
         group_mapping = {}
@@ -85,10 +94,9 @@ try:
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         st.subheader(f"📌 {selected_option} 내용")
-        st.text_area(label="복사해서 사용하세요.", value=group_mapping[selected_option], height=450)
+        st.text_area(label="공지 내용", value=group_mapping[selected_option], height=450)
     else:
         st.info("💡 등록된 공지사항이 없습니다.")
 
 except Exception as e:
     st.error(f"오류 발생: {e}")
-    st.write("주소나 시트 이름을 다시 확인해주세요.")
