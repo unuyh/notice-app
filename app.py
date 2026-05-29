@@ -4,6 +4,18 @@ import streamlit.components.v1 as components
 
 # 1. 웹 페이지 기본 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
+
+st.markdown("""
+    <style>
+    .block-container {
+        max-width: 1400px;
+        padding-left: 2rem;
+        padding-right: 2rem;
+        margin: 0 auto;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 st.title("🏥 EDGE&NEXT 공지사항 ")
 
 # 고정 구글 시트 URL
