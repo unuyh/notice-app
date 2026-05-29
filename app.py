@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import streamlit.components.v1 as components
 
 # 1. 웹 페이지 기본 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
@@ -60,35 +59,32 @@ try:
         content_groups.setdefault(t, []).append(h)
         
     if content_groups:
-        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러와 그룹화했습니다!")
+        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러왔습니다!")
         
         dropdown_options = []
         group_mapping = {}
         for i, (text, hospitals) in enumerate(content_groups.items(), 1):
-            name = f"{i}. [전체병원] 공지사항" if "전체병원" in hospitals else f"{i}. [{', '.join(hospitals)}] 공지사항"
+            name = f"{i}. [{', '.join(hospitals)}] 공지사항"
             dropdown_options.append(name)
             group_mapping[name] = text
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
-        
-        # 1. 텍스트 준비
         content_to_copy = group_mapping[selected_option]
-        js_safe_content = content_to_copy.replace("\n", "\\n").replace("'", "\\'")
         
-        # 2. 제목 + 버튼을 한 줄로 정렬하는 HTML/CSS 컨테이너
-        header_html = f"""
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-            <h3 style="margin: 0; flex-grow: 1;">📌 {selected_option} 내용</h3>
-            <button onclick="navigator.clipboard.writeText('{js_safe_content}'); alert('내용이 복사되었습니다!');" 
-                    style="margin-left: 20px; padding: 8px 15px; cursor: pointer; background-color: #ff4b4b; color: white; border: none; border-radius: 5px; font-weight: bold; white-space: nowrap;">
+        # HTML/JS 복사 로직 (st.markdown의 unsafe_allow_html=True 사용)
+        js_content = content_to_copy.replace("\n", "\\n").replace("'", "\\'")
+        
+        st.markdown(f"""
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+            <h3 style="margin: 0;">📌 {selected_option} 내용</h3>
+            <button onclick="navigator.clipboard.writeText('{js_content}'); alert('복사 완료!');" 
+                    style="padding: 5px 15px; cursor: pointer; background-color: #ff4b4b; color: white; border: none; border-radius: 5px; font-weight: bold;">
                 📋 Copy
             </button>
         </div>
-        <div style="position: relative;">
-            <textarea style="width: 100%; height: 500px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; resize: none; background-color: #262730; color: white;" readonly>{content_to_copy}</textarea>
-        </div>
-        """
-        components.html(header_html, height=600)
+        """, unsafe_allow_html=True)
+        
+        st.text_area(label="", value=content_to_copy, height=500, label_visibility="collapsed")
 
     else:
         st.info("💡 등록된 공지사항이 없습니다.")
