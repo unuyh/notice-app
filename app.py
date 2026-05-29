@@ -1,23 +1,13 @@
 import streamlit as st
 import pandas as pd
-import json
-import streamlit.components.v1 as components
 
 # 1. 페이지 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
-# CSS: 텍스트 박스 영역 우측 상단에 버튼 고정
+# CSS: 레이아웃 고정
 st.markdown("""
     <style>
     .block-container { max-width: 1400px; padding: 2rem; margin: 0 auto; }
-    /* 텍스트 박스 컨테이너를 상대 위치로 설정 */
-    .stTextArea { position: relative; }
-    /* Copy 버튼을 텍스트 박스 오른쪽 끝으로 위치 조정 */
-    .copy-btn-container { 
-        display: flex; 
-        justify-content: flex-end; 
-        margin-bottom: 5px; 
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -87,24 +77,8 @@ try:
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         target_text = group_mapping[selected_option]
         
+        # 버튼 기능을 완전히 제거하고 제목과 텍스트 영역만 배치
         st.markdown(f"### 📌 {selected_option} 내용")
-        
-        # 버튼 컨테이너 사용
-        st.markdown('<div class="copy-btn-container">', unsafe_allow_html=True)
-        json_text = json.dumps(target_text)
-        
-        if st.button("📋 Copy"):
-            # 안정적인 복사 기능 구현
-            components.html(f'''
-                <script>
-                    navigator.clipboard.writeText({json_text});
-                    alert("복사되었습니다!");
-                </script>
-            ''', height=0)
-            
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # 텍스트 영역 출력
         st.text_area(label="아래 내용을 복사해서 사용하세요.", value=target_text, height=500, label_visibility="collapsed")
         
     else:
