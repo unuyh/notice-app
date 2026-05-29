@@ -1,14 +1,17 @@
 import streamlit as st
 import pandas as pd
+import json
 
 # 1. 페이지 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
-# CSS: 레이아웃 고정
+# CSS: 레이아웃 고정 및 버튼 정렬 스타일
 st.markdown("""
     <style>
     .block-container { max-width: 1400px; padding: 2rem; margin: 0 auto; }
-    .title-text { font-size: 1.5rem; font-weight: bold; margin: 0; }
+    .title-text { font-size: 1.5rem; font-weight: bold; margin: 0; align-self: center; }
+    /* 버튼을 우측 끝으로 보내는 클래스 */
+    .btn-container { display: flex; justify-content: flex-end; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -68,8 +71,6 @@ try:
         content_groups.setdefault(t, []).append(h)
         
     if content_groups:
-        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러와 그룹화했습니다!")
-        
         dropdown_options = []
         group_mapping = {}
         for i, (text, hospitals) in enumerate(content_groups.items(), 1):
@@ -80,15 +81,21 @@ try:
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         target_text = group_mapping[selected_option]
         
-        # [해결책] 컬럼으로 제목과 버튼을 물리적으로 분리
-        col1, col2 = st.columns([0.85, 0.15])
+        # [수정된 레이아웃] 컬럼 비율 조정
+        # col1(제목)은 넓게, col2(버튼)는 작게 설정하여 버튼이 우측 끝으로 가게 함
+        col1, col2 = st.columns([0.9, 0.1])
+        
         with col1:
             st.markdown(f'<div class="title-text">📌 {selected_option} 내용</div>', unsafe_allow_html=True)
+            
         with col2:
-            # 복사 기능을 위한 자바스크립트 호출 (Streamlit 컴포넌트 없이 구현)
+            st.markdown('<div class="btn-container">', unsafe_allow_html=True)
+            # 자바스크립트를 이용한 복사 기능 적용
+            json_text = json.dumps(target_text)
             if st.button("📋 Copy"):
-                st.write(f'<script>navigator.clipboard.writeText(`{target_text}`);</script>', unsafe_allow_html=True)
+                st.write(f'<script>navigator.clipboard.writeText({json_text});</script>', unsafe_allow_html=True)
                 st.toast("복사되었습니다!", icon="✅")
+            st.markdown('</div>', unsafe_allow_html=True)
         
         st.text_area(label="아래 내용을 복사해서 사용하세요.", value=target_text, height=500, label_visibility="collapsed")
         
