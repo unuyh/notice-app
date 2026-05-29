@@ -1,16 +1,14 @@
 import streamlit as st
 import pandas as pd
-import json
 
 # 1. 페이지 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
-# 2. 레이아웃 고정 CSS
+# CSS: 레이아웃 고정
 st.markdown("""
     <style>
     .block-container { max-width: 1400px; padding: 2rem; margin: 0 auto; }
-    .title-row { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; }
-    .copy-btn { margin-left: 15px; cursor: pointer; background-color: #ff4b4b; color: white; border: none; padding: 5px 15px; border-radius: 5px; font-weight: bold; }
+    .title-text { font-size: 1.5rem; font-weight: bold; margin: 0; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -39,6 +37,10 @@ try:
     available_dates = available_dates[available_dates.str.match(r'\d{4}-\d{2}-\d{2}')]
     date_list = sorted(list(set(available_dates)), reverse=True)
     
+    if not date_list:
+        st.error("❌ '배포내역 확인' 시트의 A열에서 데이터를 찾을 수 없습니다.")
+        st.stop()
+        
     selected_date = st.selectbox("📅 조회할 배포일자를 선택하세요:", date_list)
     
     filtered_df = df[df.iloc[:, 0] == selected_date]
@@ -66,6 +68,8 @@ try:
         content_groups.setdefault(t, []).append(h)
         
     if content_groups:
+        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러와 그룹화했습니다!")
+        
         dropdown_options = []
         group_mapping = {}
         for i, (text, hospitals) in enumerate(content_groups.items(), 1):
@@ -76,19 +80,18 @@ try:
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         target_text = group_mapping[selected_option]
         
-        # [핵심 수정] JSON으로 변환하여 안전하게 전달
-        json_text = json.dumps(target_text)
+        # [해결책] 컬럼으로 제목과 버튼을 물리적으로 분리
+        col1, col2 = st.columns([0.85, 0.15])
+        with col1:
+            st.markdown(f'<div class="title-text">📌 {selected_option} 내용</div>', unsafe_allow_html=True)
+        with col2:
+            # 복사 기능을 위한 자바스크립트 호출 (Streamlit 컴포넌트 없이 구현)
+            if st.button("📋 Copy"):
+                st.write(f'<script>navigator.clipboard.writeText(`{target_text}`);</script>', unsafe_allow_html=True)
+                st.toast("복사되었습니다!", icon="✅")
         
-        st.markdown(f'''
-        <div class="title-row">
-            📌 {selected_option} 내용
-            <button class="copy-btn" onclick='navigator.clipboard.writeText({json_text}); alert("내용이 복사되었습니다!");'>
-                📋 Copy
-            </button>
-        </div>
-        ''', unsafe_allow_html=True)
+        st.text_area(label="아래 내용을 복사해서 사용하세요.", value=target_text, height=500, label_visibility="collapsed")
         
-        st.text_area(label="아래 내용을 복사해서 사용하세요.", value=target_text, height=500)
     else:
         st.info("💡 등록된 공지사항이 없습니다.")
 
