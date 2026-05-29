@@ -4,38 +4,39 @@ import pandas as pd
 # 1. 웹 페이지 기본 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
-# CSS를 통한 자동 레이아웃 엔진 제어
+# CSS: 자동 레이아웃 엔진 무력화 및 그리드 고정
 st.markdown("""
     <style>
-    /* Streamlit 기본 컨테이너 여백 및 너비 제어 */
     .block-container {
         padding-top: 1rem;
         max-width: 1400px;
         margin: 0 auto;
     }
-    /* 고정 헤더 컨테이너 */
+    /* 헤더 컨테이너: 그리드로 제목과 버튼 분리 */
     .header-container {
         display: grid;
-        grid-template-columns: 1fr 90px;
+        grid-template-columns: 1fr auto; /* 제목은 남은 공간, 버튼은 필요한 만큼만 */
         align-items: center;
+        gap: 15px;
         width: 100%;
         height: 60px;
         margin-top: 20px;
         margin-bottom: 5px;
-        padding: 0;
         overflow: hidden;
     }
-    /* 제목 텍스트 스타일: 줄바꿈 금지 및 넘침 방지 */
+    /* 제목 스타일: 폭 제한 및 말줄임표 적용 */
     .header-title {
         margin: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        min-width: 0; /* 중요: 그리드 아이템이 넘치지 않게 함 */
         font-size: 1.5rem;
         font-weight: bold;
     }
-    /* Copy 버튼 고정 사이즈 */
+    /* 버튼 스타일: 축소 및 위치 이동 방지 */
     .copy-btn {
+        flex-shrink: 0; /* 절대로 작아지지 않음 */
         width: 80px;
         height: 40px;
         cursor: pointer;
@@ -44,7 +45,6 @@ st.markdown("""
         border: none;
         border-radius: 5px;
         font-weight: bold;
-        flex-shrink: 0;
         justify-self: end;
     }
     </style>
@@ -117,20 +117,18 @@ try:
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         
-        # 복사할 텍스트 준비
         copy_text = group_mapping[selected_option].replace("\n", "\\n").replace("'", "\\'")
         
-        # [핵심] Streamlit 자동 레이아웃이 아닌, 직접 정의한 CSS 클래스 사용
+        # 버튼이 사라지지 않도록 CSS 클래스 적용
         st.markdown(f"""
         <div class="header-container">
-            <h3 class="header-title">📌 {selected_option} 내용</h3>
+            <h3 class="header-title" title="{selected_option}">📌 {selected_option} 내용</h3>
             <button class="copy-btn" onclick="navigator.clipboard.writeText('{copy_text}'); alert('내용이 복사되었습니다!');">
                 📋 Copy
             </button>
         </div>
         """, unsafe_allow_html=True)
         
-        # 텍스트 영역 (자동 레이아웃 영향을 받지 않도록 별도 설정)
         st.text_area(label="", value=group_mapping[selected_option], height=500, label_visibility="collapsed")
         
     else:
