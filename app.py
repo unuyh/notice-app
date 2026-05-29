@@ -1,27 +1,59 @@
 import streamlit as st
 import pandas as pd
-import streamlit.components.v1 as components
 
 # 1. 웹 페이지 기본 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
+# CSS를 통한 자동 레이아웃 엔진 제어
 st.markdown("""
     <style>
+    /* Streamlit 기본 컨테이너 여백 및 너비 제어 */
     .block-container {
+        padding-top: 1rem;
         max-width: 1400px;
-        padding-left: 2rem;
-        padding-right: 2rem;
         margin: 0 auto;
+    }
+    /* 고정 헤더 컨테이너 */
+    .header-container {
+        display: grid;
+        grid-template-columns: 1fr 90px;
+        align-items: center;
+        width: 100%;
+        height: 60px;
+        margin-top: 20px;
+        margin-bottom: 5px;
+        padding: 0;
+        overflow: hidden;
+    }
+    /* 제목 텍스트 스타일: 줄바꿈 금지 및 넘침 방지 */
+    .header-title {
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    /* Copy 버튼 고정 사이즈 */
+    .copy-btn {
+        width: 80px;
+        height: 40px;
+        cursor: pointer;
+        background-color: #ff4b4b;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        flex-shrink: 0;
+        justify-self: end;
     }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🏥 EDGE&NEXT 공지사항 ")
 
-# 고정 구글 시트 URL
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/16Ygs3k4Dqolt6HaYNmdrNop1ptuV9_jZ2TEYaj8xzNA/edit#gid=0"
 
-# 고정 병원 목록
 fixed_hospitals = [
     "전체병원", "서울부민", "부산부민", "온종합", "해운대부민", "혜민", 
     "대림성모", "제천서울", "여수중앙", "구포부민", "두발로", "세계로", 
@@ -79,29 +111,28 @@ try:
         dropdown_options = []
         group_mapping = {}
         for i, (text, hospitals) in enumerate(content_groups.items(), 1):
-            name = f"{i}. [전체병원] 공지사항" if "전체병원" in hospitals else f"{i}. [{', '.join(hospitals)}] 공지사항"
+            name = f"{i}. [{', '.join(hospitals)}] 공지사항"
             dropdown_options.append(name)
             group_mapping[name] = text
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         
-        # [수정사항] CSS Grid를 사용하여 제목과 버튼 레이아웃을 엄격하게 고정
+        # 복사할 텍스트 준비
         copy_text = group_mapping[selected_option].replace("\n", "\\n").replace("'", "\\'")
         
-        header_html = f"""
-        <div style="display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 20px; width: 100%; margin-top: 1rem;">
-            <h3 style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                📌 {selected_option} 내용
-            </h3>
-            <button onclick="navigator.clipboard.writeText('{copy_text}'); alert('내용이 복사되었습니다!');" 
-                    style="padding: 10px 20px; cursor: pointer; background-color: #ff4b4b; color: white; border: none; border-radius: 5px; font-weight: bold; width: 80px;">
+        # [핵심] Streamlit 자동 레이아웃이 아닌, 직접 정의한 CSS 클래스 사용
+        st.markdown(f"""
+        <div class="header-container">
+            <h3 class="header-title">📌 {selected_option} 내용</h3>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('{copy_text}'); alert('내용이 복사되었습니다!');">
                 📋 Copy
             </button>
         </div>
-        """
-        st.markdown(header_html, unsafe_allow_html=True)
-
-        st.text_area(label="아래 내용을 복사해서 사용하세요.", value=group_mapping[selected_option], height=500)
+        """, unsafe_allow_html=True)
+        
+        # 텍스트 영역 (자동 레이아웃 영향을 받지 않도록 별도 설정)
+        st.text_area(label="", value=group_mapping[selected_option], height=500, label_visibility="collapsed")
+        
     else:
         st.info("💡 등록된 공지사항이 없습니다.")
 
