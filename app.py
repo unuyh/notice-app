@@ -5,13 +5,18 @@ import json
 # 1. 페이지 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
-# CSS: 레이아웃 고정 및 버튼 정렬 스타일
+# CSS: 텍스트 박스 영역 우측 상단에 버튼 고정
 st.markdown("""
     <style>
     .block-container { max-width: 1400px; padding: 2rem; margin: 0 auto; }
-    .title-text { font-size: 1.5rem; font-weight: bold; margin: 0; align-self: center; }
-    /* 버튼을 우측 끝으로 보내는 클래스 */
-    .btn-container { display: flex; justify-content: flex-end; }
+    /* 텍스트 박스 컨테이너를 상대 위치로 설정 */
+    .stTextArea { position: relative; }
+    /* Copy 버튼을 텍스트 박스 오른쪽 끝으로 위치 조정 */
+    .copy-btn-container { 
+        display: flex; 
+        justify-content: flex-end; 
+        margin-bottom: 5px; 
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -81,22 +86,18 @@ try:
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         target_text = group_mapping[selected_option]
         
-        # [수정된 레이아웃] 컬럼 비율 조정
-        # col1(제목)은 넓게, col2(버튼)는 작게 설정하여 버튼이 우측 끝으로 가게 함
-        col1, col2 = st.columns([0.9, 0.1])
+        # 1. 제목은 일반 마크다운으로 표시
+        st.markdown(f"### 📌 {selected_option} 내용")
         
-        with col1:
-            st.markdown(f'<div class="title-text">📌 {selected_option} 내용</div>', unsafe_allow_html=True)
-            
-        with col2:
-            st.markdown('<div class="btn-container">', unsafe_allow_html=True)
-            # 자바스크립트를 이용한 복사 기능 적용
-            json_text = json.dumps(target_text)
-            if st.button("📋 Copy"):
-                st.write(f'<script>navigator.clipboard.writeText({json_text});</script>', unsafe_allow_html=True)
-                st.toast("복사되었습니다!", icon="✅")
-            st.markdown('</div>', unsafe_allow_html=True)
+        # 2. 버튼 컨테이너를 사용하여 우측 정렬
+        st.markdown('<div class="copy-btn-container">', unsafe_allow_html=True)
+        json_text = json.dumps(target_text)
+        if st.button("📋 Copy"):
+            st.write(f'<script>navigator.clipboard.writeText({json_text});</script>', unsafe_allow_html=True)
+            st.toast("복사되었습니다!", icon="✅")
+        st.markdown('</div>', unsafe_allow_html=True)
         
+        # 3. 텍스트 박스 출력
         st.text_area(label="아래 내용을 복사해서 사용하세요.", value=target_text, height=500, label_visibility="collapsed")
         
     else:
