@@ -5,14 +5,12 @@ import json
 # 1. 페이지 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
-# CSS: 텍스트 박스 영역 우측 상단에 버튼 고정
+# CSS: 버튼을 오른쪽 끝으로 정렬
 st.markdown("""
     <style>
     .block-container { max-width: 1400px; padding: 2rem; margin: 0 auto; }
-    /* 텍스트 박스 컨테이너를 상대 위치로 설정 */
-    .stTextArea { position: relative; }
-    /* Copy 버튼을 텍스트 박스 오른쪽 끝으로 위치 조정 */
-    .copy-btn-container { 
+    /* 버튼 컨테이너를 Flexbox로 설정하여 오른쪽 끝 정렬 */
+    .copy-btn-wrapper { 
         display: flex; 
         justify-content: flex-end; 
         margin-bottom: 5px; 
@@ -86,13 +84,16 @@ try:
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         target_text = group_mapping[selected_option]
         
-        # 1. 제목은 일반 마크다운으로 표시
+        # 1. 제목 표시
         st.markdown(f"### 📌 {selected_option} 내용")
         
-        # 2. 버튼 컨테이너를 사용하여 우측 정렬
-        st.markdown('<div class="copy-btn-container">', unsafe_allow_html=True)
+        # 2. 버튼 컨테이너에 CSS 클래스 적용 (우측 정렬)
+        st.markdown('<div class="copy-btn-wrapper">', unsafe_allow_html=True)
         json_text = json.dumps(target_text)
+        
+        # Streamlit 버튼 사용
         if st.button("📋 Copy"):
+            # 클릭 시 동작을 위한 자바스크립트 삽입
             st.write(f'<script>navigator.clipboard.writeText({json_text});</script>', unsafe_allow_html=True)
             st.toast("복사되었습니다!", icon="✅")
         st.markdown('</div>', unsafe_allow_html=True)
