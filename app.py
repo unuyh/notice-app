@@ -71,19 +71,25 @@ try:
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
         content_to_copy = group_mapping[selected_option]
         
-        # HTML/JS 복사 로직 (st.markdown의 unsafe_allow_html=True 사용)
-        js_content = content_to_copy.replace("\n", "\\n").replace("'", "\\'")
+        # 1. 컬럼을 9:1 비율로 나누어 정렬
+        col1, col2 = st.columns([0.9, 0.1])
         
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
-            <h3 style="margin: 0;">📌 {selected_option} 내용</h3>
+        with col1:
+            # 제목이 너무 길면 줄바꿈이 일어나도록 스타일 적용
+            st.markdown(f"<h4 style='margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'>📌 {selected_option} 내용</h4>", unsafe_allow_html=True)
+            
+        with col2:
+            # 버튼만 별도의 HTML 컴포넌트로 배치
+            js_content = content_to_copy.replace("\n", "\\n").replace("'", "\\'")
+            btn_html = f"""
             <button onclick="navigator.clipboard.writeText('{js_content}'); alert('복사 완료!');" 
-                    style="padding: 5px 15px; cursor: pointer; background-color: #ff4b4b; color: white; border: none; border-radius: 5px; font-weight: bold;">
+                    style="width: 100%; padding: 5px; cursor: pointer; background-color: #ff4b4b; color: white; border: none; border-radius: 5px; font-weight: bold;">
                 📋 Copy
             </button>
-        </div>
-        """, unsafe_allow_html=True)
+            """
+            st.markdown(btn_html, unsafe_allow_html=True)
         
+        # 2. 텍스트 영역은 그대로 유지
         st.text_area(label="", value=content_to_copy, height=500, label_visibility="collapsed")
 
     else:
