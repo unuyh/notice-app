@@ -1,51 +1,48 @@
 import streamlit as st
 import pandas as pd
 
-# 1. 웹 페이지 기본 세팅
+# 1. 페이지 세팅
 st.set_page_config(page_title="EDGE&NEXT 공지사항", layout="wide")
 
-# CSS: 자동 레이아웃 엔진 무력화 및 그리드 고정
+# 2. 레이아웃 강제 고정 CSS (절대 변경 금지)
 st.markdown("""
     <style>
-    .block-container {
-        padding-top: 1rem;
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-    /* 헤더 컨테이너: 그리드로 제목과 버튼 분리 */
-    .header-container {
+    .block-container { max-width: 1400px; padding-left: 2rem; padding-right: 2rem; margin: 0 auto; }
+    
+    /* 제목과 버튼을 위한 엄격한 그리드 컨테이너 */
+    .fixed-header-grid {
         display: grid;
-        grid-template-columns: 1fr auto; /* 제목은 남은 공간, 버튼은 필요한 만큼만 */
+        grid-template-columns: 1fr 90px;
         align-items: center;
-        gap: 15px;
         width: 100%;
-        height: 60px;
         margin-top: 20px;
-        margin-bottom: 5px;
-        overflow: hidden;
+        margin-bottom: 10px;
+        gap: 10px;
     }
-    /* 제목 스타일: 폭 제한 및 말줄임표 적용 */
-    .header-title {
-        margin: 0;
+    
+    /* 제목: 넘치면 무조건 줄임표 처리 */
+    .title-text {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        min-width: 0; /* 중요: 그리드 아이템이 넘치지 않게 함 */
         font-size: 1.5rem;
         font-weight: bold;
+        margin: 0;
     }
-    /* 버튼 스타일: 축소 및 위치 이동 방지 */
-    .copy-btn {
-        flex-shrink: 0; /* 절대로 작아지지 않음 */
-        width: 80px;
-        height: 40px;
+    
+    /* 버튼: 사이즈 절대 고정 및 사라짐 방지 */
+    .fixed-copy-btn {
+        width: 80px !important;
+        height: 40px !important;
         cursor: pointer;
-        background-color: #ff4b4b;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        font-weight: bold;
-        justify-self: end;
+        background-color: #ff4b4b !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 5px !important;
+        font-weight: bold !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -75,12 +72,7 @@ try:
     available_dates = available_dates[available_dates.str.match(r'\d{4}-\d{2}-\d{2}')]
     date_list = sorted(list(set(available_dates)), reverse=True)
     
-    if not date_list:
-        st.error("❌ '배포내역 확인' 시트의 A열에서 데이터를 찾을 수 없습니다.")
-        st.stop()
-        
     selected_date = st.selectbox("📅 조회할 배포일자를 선택하세요:", date_list)
-    
     filtered_df = df[df.iloc[:, 0] == selected_date]
     source_data = filtered_df.iloc[:, 22].dropna()
     notice_dict = {hospital: [] for hospital in fixed_hospitals}
@@ -106,8 +98,6 @@ try:
         content_groups.setdefault(t, []).append(h)
         
     if content_groups:
-        st.success(f"🎉 {selected_date} 자 데이터를 성공적으로 불러와 그룹화했습니다!")
-        
         dropdown_options = []
         group_mapping = {}
         for i, (text, hospitals) in enumerate(content_groups.items(), 1):
@@ -116,23 +106,20 @@ try:
             group_mapping[name] = text
         
         selected_option = st.selectbox("🎯 발송 대상 병원 그룹을 고르세요:", dropdown_options)
-        
         copy_text = group_mapping[selected_option].replace("\n", "\\n").replace("'", "\\'")
         
-        # 버튼이 사라지지 않도록 CSS 클래스 적용
+        # [HTML 렌더링] Streamlit 내부 레이아웃 엔진을 거치지 않는 고정 헤더
         st.markdown(f"""
-        <div class="header-container">
-            <h3 class="header-title" title="{selected_option}">📌 {selected_option} 내용</h3>
-            <button class="copy-btn" onclick="navigator.clipboard.writeText('{copy_text}'); alert('내용이 복사되었습니다!');">
+        <div class="fixed-header-grid">
+            <h3 class="title-text" title="{selected_option}">📌 {selected_option} 내용</h3>
+            <button class="fixed-copy-btn" onclick="navigator.clipboard.writeText('{copy_text}'); alert('내용이 복사되었습니다!');">
                 📋 Copy
             </button>
         </div>
         """, unsafe_allow_html=True)
         
-        st.text_area(label="", value=group_mapping[selected_option], height=500, label_visibility="collapsed")
-        
+        st.text_area(label="아래 내용을 복사해서 사용하세요.", value=group_mapping[selected_option], height=500)
     else:
         st.info("💡 등록된 공지사항이 없습니다.")
-
 except Exception as e:
     st.error(f"오류 발생: {e}")
